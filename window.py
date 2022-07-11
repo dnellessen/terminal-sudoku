@@ -46,15 +46,13 @@ class Window:
             elif brow > 9-1:
                 brow = 0
 
-            try:
-                key = int(key)
+            if key.isnumeric():
+                if key == '0':
+                    key = ' '
                 win.addstr(str(key))
-            except ValueError:
-                pass
-            finally:
-                Window.cursor_x, Window.cursor_y = self.board.cursors[brow][bcol]
-                win.move(Window.cursor_x, Window.cursor_y)
-                win.refresh()
+            Window.cursor_x, Window.cursor_y = self.board.cursors[brow][bcol]
+            win.move(Window.cursor_x, Window.cursor_y)
+            win.refresh()
 
     def start(self):
         curses.initscr()
