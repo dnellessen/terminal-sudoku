@@ -3,11 +3,33 @@ import random
 
 
 class Sudoku:
+    """
+    A class that handles the Sudoku game.
+
+    Attributes
+    ----------
+    board : list[list]
+        Playing board. Empty fields are zeroes.
+    solution : list[list]
+        Solution of the board.
+
+    Methods
+    -------
+    generate(difficulty='medium'):
+        Generate a Sudoku board.
+
+    solve():
+        Solve a Sudoku board.
+    
+    check(board):
+        Check if board has successfully been completed.
+    """
+
     def __init__(self):
         self.board = []
         self.solution = []
 
-        self.difficulties = {
+        self._difficulties = {
             'easy': list(range(21, 30)),
             'medium': list(range(31, 40)),
             'hard': list(range(41, 50)),
@@ -19,9 +41,9 @@ class Sudoku:
         Generate a Sudoku board.
 
         By randomly filling the first row, column and square of an empty board
-        by respecting to Sudoku rules. Then the board get solved using a 
+        while respecting to Sudoku rules. Then the board get solved using a 
         backtracking algorithm. Depending on the difficulty, x numbers are removed 
-        from the board (substituted with 0).
+        from the board (substituted with zeroes).
 
         Parameters
         ----------
@@ -33,9 +55,10 @@ class Sudoku:
         list
             The generated board.
 
-        See Also
+        Also See
         --------
         solve : Solve a Sudoku board.
+        check : Check if board has successfully been completed.
 
         Examples
         --------
@@ -93,7 +116,7 @@ class Sudoku:
                     self.board[r][c] = num
 
     def _remove_vals(self, difficulty):
-        diff_range = self.difficulties[difficulty]
+        diff_range = self._difficulties[difficulty]
         i = random.randint(0, len(diff_range)-1)
         total_to_remove = diff_range[i]
         removed = 0
@@ -110,16 +133,17 @@ class Sudoku:
         '''
         Solve a Sudoku board.
 
-        Using a backtracking algorithm to solve a Sudoku board.
+        A backtracking algorithm solving the Sudoku board.
 
         Returns
         -------
         list
             The solved board.
 
-        See Also
+        Also See
         --------
         generate : Generate a Sudoku board.
+        check : Check if board has successfully been completed.
 
         Examples
         --------
@@ -185,6 +209,41 @@ class Sudoku:
                     return (r, c)
         return None
 
+
+    def check(self, board: list):
+        '''
+        Check if board has successfully been completed.
+
+        Simply comparing with one solution will
+        most likely lead to false claims, because there might be multiple solutions.
+        Therefore checking the board with the Sudoku rules.
+
+        Parameters
+        ----------
+        board : list
+            The board that will be checked.
+
+        Returns
+        -------
+        solved : bool
+            True if board has successfully been completed.
+
+        errors : tuple
+            The indices of the errors.
+            Only where the starting board has zeroes.
+
+        Also See
+        --------
+        generate : Generate a Sudoku board.
+        solve : Solve a Sudoku board.
+
+        Examples
+        --------
+        >>> sudoku.check(board)
+        True, ()
+        >>> sudoku.check(board)
+        False, ((0, 1), (4, 3), (7, 3))
+        '''
 
 if __name__ == "__main__":
     sudoku = Sudoku()
