@@ -1,16 +1,19 @@
 import curses
 from curses.textpad import rectangle
 
+from exceptions import *
+
 
 class Window:
     rows, cols = 0, 0
+    min_rows, min_cols = 25, 50
     cursor_x, cursor_y = 0, 0
 
     def __init__(self):
         self.board = WindowBoard()
 
     def start(self):
-        ''' Start screen and game. '''
+        ''' Start window and game. '''
         curses.initscr()
         curses.wrapper(self._main)
 
@@ -19,6 +22,7 @@ class Window:
         curses.use_default_colors()
 
         Window.rows, Window.cols = stdscr.getmaxyx()
+        self._check_size()
 
         stdscr.clear()
         self.board.draw(stdscr)
@@ -30,6 +34,15 @@ class Window:
         brow, bcol = 0, 0
 
         while key != 'q':
+            if stdscr.getmaxyx() != (Window.rows, Window.cols):
+                Window.rows, Window.cols = stdscr.getmaxyx()
+                self._check_size()
+
+                stdscr.clear()
+                self.board.draw(stdscr)
+                Window.cursor_x, Window.cursor_y = self.board.cursors[brow][bcol]
+                stdscr.move(Window.cursor_x, Window.cursor_y)
+
             key = stdscr.getkey()
 
             if key == 'KEY_LEFT':
@@ -55,15 +68,23 @@ class Window:
                 if key == '0':
                     key = ' '
                 stdscr.addstr(str(key))
+
             Window.cursor_x, Window.cursor_y = self.board.cursors[brow][bcol]
             stdscr.move(Window.cursor_x, Window.cursor_y)
             stdscr.refresh()
+
+    def _check_size(self):
+        ''' Raises WindowToSmallError if window size is too small. '''
+        if Window.rows < Window.min_rows or Window.cols < Window.min_cols:
+            raise WindowToSmallError('Window must have a minimum of 25 rows and 50 columns.')
 
 
     
 class WindowBoard:
     def __init__(self):
         self.cursors = [[() * 9] * 9 for _ in range(9)]
+        self.width = 44
+        self.height = 22
 
     def draw(self, stdscr):
         '''
@@ -79,14 +100,12 @@ class WindowBoard:
             The curses window to draw on it.
         '''
 
-        center_x = Window.cols // 2
+        # added number is finetuning
+        center_x = Window.cols // 2 + 2
         center_y = Window.rows // 2
 
-        board_width = 44
-        board_start_x = center_x - (board_width // 2)
-
-        board_height = 22
-        board_start_y = center_y - (board_height // 2)
+        board_start_x = center_x - (self.width // 2)
+        board_start_y = center_y - (self.height // 2)
 
         upperleft_y = board_start_y
         upperleft_x = board_start_x
@@ -118,8 +137,8 @@ class WindowBoard:
             stdscr, 
             board_start_y - 1, 
             board_start_x - 2, 
-            board_start_y - 1 + board_height, 
-            board_start_x - 2 + board_width,
+            board_start_y - 1 + self.height, 
+            board_start_x - 2 + self.width,
         )
 
     def _add_cursor(self, brow, bcol, x, y):

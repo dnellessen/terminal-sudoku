@@ -1,8 +1,6 @@
 from copy import deepcopy
 import random
 
-from pprint import pprint
-
 
 class Sudoku:
     def __init__(self):
@@ -15,7 +13,7 @@ class Sudoku:
             'hard': list(range(41, 50)),
         }
     
-    
+
     def generate(self, difficulty='medium') -> list:
         '''
         Generate a Sudoku board.
@@ -191,6 +189,6 @@ class Sudoku:
 if __name__ == "__main__":
     sudoku = Sudoku()
     sudoku.generate(difficulty='hard')
-    pprint(sudoku.board)
+    print(sudoku.board)
     sudoku.solve()
-    pprint(sudoku.board)
+    print(sudoku.board)
