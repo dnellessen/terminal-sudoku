@@ -6,10 +6,6 @@ from pprint import pprint
 
 class Sudoku:
     def __init__(self):
-        self.base = 3
-        self.side = self.base ** 2
-        self.base_range = range(self.base)
-
         self.board = []
         self.solution = []
 
@@ -19,10 +15,46 @@ class Sudoku:
             'hard': list(range(41, 50)),
         }
     
-
+    
     def generate(self, difficulty='medium') -> list:
+        '''
+        Generate a Sudoku board.
+
+        By randomly filling the first row, column and square of an empty board
+        by respecting to Sudoku rules. Then the board get solved using a 
+        backtracking algorithm. Depending on the difficulty, x numbers are removed 
+        from the board (substituted with 0).
+
+        Parameters
+        ----------
+        difficulty : str, default 'medium'
+            The difficulty of the board (easy, medium, hard).
+
+        Returns
+        -------
+        list
+            The generated board.
+
+        See Also
+        --------
+        solve : Solve a Sudoku board.
+
+        Examples
+        --------
+        >>> sudoku.generate('hard')
+        [[0, 0, 0, 4, 0, 6, 0, 0, 3],
+         [5, 0, 6, 1, 2, 0, 0, 0, 9],
+         [3, 8, 0, 5, 0, 9, 0, 0, 0],
+         [0, 1, 3, 0, 4, 0, 6, 0, 7],
+         [0, 0, 0, 0, 0, 0, 0, 1, 8],
+         [9, 0, 7, 0, 0, 0, 2, 4, 5],
+         [0, 9, 0, 0, 3, 0, 8, 5, 0],
+         [4, 0, 0, 0, 0, 1, 7, 6, 2],
+         [0, 0, 2, 0, 6, 0, 0, 0, 1]]
+        '''
+
         self._fill_board()
-        self.solve()
+        self._solve()
         self.solution = deepcopy(self.board)
         self._remove_vals(difficulty)
 
@@ -76,17 +108,51 @@ class Sudoku:
                 removed += 1
 
 
-    def solve(self):
+    def solve(self) -> list:
+        '''
+        Solve a Sudoku board.
+
+        Using a backtracking algorithm to solve a Sudoku board.
+
+        Returns
+        -------
+        list
+            The solved board.
+
+        See Also
+        --------
+        generate : Generate a Sudoku board.
+
+        Examples
+        --------
+        >>> sudoku.solve()
+        [[1, 2, 9, 4, 8, 6, 5, 7, 3],
+         [5, 7, 6, 1, 2, 3, 4, 8, 9],
+         [3, 8, 4, 5, 7, 9, 1, 2, 6],
+         [8, 1, 3, 2, 4, 5, 6, 9, 7],
+         [2, 4, 5, 6, 9, 7, 3, 1, 8],
+         [9, 6, 7, 3, 1, 8, 2, 4, 5],
+         [6, 9, 1, 7, 3, 2, 8, 5, 4],
+         [4, 3, 8, 9, 5, 1, 7, 6, 2],
+         [7, 5, 2, 8, 6, 4, 9, 3, 1]]
+        '''
+
+        self._solve()
+        return self.board
+
+    def _solve(self):
         empty = self._find_empty()
         if not empty:
             return True
         row, col = empty
 
-        for i in range(1, 10):
+        nums = list(range(1, 10))   # shuffle for random in generate
+        random.shuffle(nums)        # (has no effects on algorithm)
+        for i in nums:
             if self._possible(row, col, i):
                 self.board[row][col] = i
 
-                if self.solve():
+                if self._solve():
                     return True
 
                 self.board[row][col] = 0

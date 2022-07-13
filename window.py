@@ -9,23 +9,28 @@ class Window:
     def __init__(self):
         self.board = WindowBoard()
 
-    def main(self, win):
+    def start(self):
+        ''' Start screen and game. '''
+        curses.initscr()
+        curses.wrapper(self._main)
+
+    def _main(self, stdscr):
         curses.start_color()
         curses.use_default_colors()
 
-        Window.rows, Window.cols = win.getmaxyx()
+        Window.rows, Window.cols = stdscr.getmaxyx()
 
-        win.clear()
-        self.board.draw(win)
+        stdscr.clear()
+        self.board.draw(stdscr)
 
         Window.cursor_x, Window.cursor_y = self.board.cursors[0][0]
-        win.move(Window.cursor_x, Window.cursor_y)
+        stdscr.move(Window.cursor_x, Window.cursor_y)
 
         key = 0
         brow, bcol = 0, 0
 
         while key != 'q':
-            key = win.getkey()
+            key = stdscr.getkey()
 
             if key == 'KEY_LEFT':
                 bcol -= 1
@@ -49,24 +54,31 @@ class Window:
             if key.isnumeric():
                 if key == '0':
                     key = ' '
-                win.addstr(str(key))
+                stdscr.addstr(str(key))
             Window.cursor_x, Window.cursor_y = self.board.cursors[brow][bcol]
-            win.move(Window.cursor_x, Window.cursor_y)
-            win.refresh()
+            stdscr.move(Window.cursor_x, Window.cursor_y)
+            stdscr.refresh()
 
-    def start(self):
-        curses.initscr()
-        curses.wrapper(self.main)
 
     
 class WindowBoard:
     def __init__(self):
         self.cursors = [[() * 9] * 9 for _ in range(9)]
 
-    def add_cursor(self, brow, bcol, x, y):
-        self.cursors[brow][bcol] = (x, y)
+    def draw(self, stdscr):
+        '''
+        Draw Sudoku board in the center of the screen.
 
-    def draw(self, win):
+        Using curses.textpad.rectangle to draw squares on screen. The positions
+        of the smaller rectangles' center are added to the cursors board variable.
+        That way the cursor's position for the input is saved.
+
+        Parameters
+        ----------
+        stdscr: _curses.window
+            The curses window to draw on it.
+        '''
+
         center_x = Window.cols // 2
         center_y = Window.rows // 2
 
@@ -91,8 +103,8 @@ class WindowBoard:
                     upperleft_x += 2
                     lowerright_x += 2
 
-                rectangle(win, upperleft_y, upperleft_x, lowerright_y, lowerright_x)
-                self.add_cursor(numrow, numcol, upperleft_y + 1, upperleft_x + 2)
+                rectangle(stdscr, upperleft_y, upperleft_x, lowerright_y, lowerright_x)
+                self._add_cursor(numrow, numcol, upperleft_y + 1, upperleft_x + 2)
 
                 upperleft_x += 4
                 lowerright_x += 4
@@ -103,12 +115,15 @@ class WindowBoard:
             lowerright_y += 2
 
         rectangle(
-            win, 
+            stdscr, 
             board_start_y - 1, 
             board_start_x - 2, 
             board_start_y - 1 + board_height, 
             board_start_x - 2 + board_width,
         )
+
+    def _add_cursor(self, brow, bcol, x, y):
+        self.cursors[brow][bcol] = (x, y)
 
     
 win = Window()
