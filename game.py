@@ -129,6 +129,54 @@ class Sudoku:
                 removed += 1
 
 
+    def check(self, board: list):
+        '''
+        Check if board has successfully been completed.
+
+        Simply comparing with one solution will
+        most likely lead to false claims, because there might be multiple solutions.
+        Therefore checking the board with the Sudoku rules.
+
+        Parameters
+        ----------
+        board : list
+            The board that will be checked.
+
+        Returns
+        -------
+        solved : bool
+            True if board has successfully been completed.
+
+        errors : tuple
+            The indices of the errors.
+            Only where the starting board has zeroes.
+
+        Also See
+        --------
+        generate : Generate a Sudoku board.
+        solve : Solve a Sudoku board.
+
+        Examples
+        --------
+        >>> sudoku.check(board)
+        True, ()
+        >>> sudoku.check(board)
+        False, ((0, 1), (4, 3), (7, 3))
+        '''
+
+        solved = True
+        errors = []
+
+        for r in range(9):
+            for c in range(9):
+                num = board[r][c]
+                if not self._possible(r, c, num, board):
+                    solved = False
+                    if self.board[r][c] == 0:
+                        errors.append((r, c))
+
+        return solved, tuple(errors)
+
     def solve(self) -> list:
         '''
         Solve a Sudoku board.
@@ -181,15 +229,18 @@ class Sudoku:
 
         return False
 
-    def _possible(self, row, col, num):
+    def _possible(self, row, col, num, board=None):
+        if not board:
+            board = self.board
+
         # row
         for c in range(9):
-            if self.board[row][c] == num and col != c:
+            if board[row][c] == num and col != c:
                 return False
 
         # column
         for r in range(9):
-            if self.board[r][col] == num and row != r:
+            if board[r][col] == num and row != r:
                 return False
 
         # square
@@ -197,7 +248,7 @@ class Sudoku:
         scol = (col // 3) * 3
         for r in range(srow, srow + 3):
             for c in range(scol, scol + 3):
-                if self.board[r][c] == num and (r, c) != (row, col):
+                if board[r][c] == num and (r, c) != (row, col):
                     return False
 
         return True
@@ -210,44 +261,15 @@ class Sudoku:
         return None
 
 
-    def check(self, board: list):
-        '''
-        Check if board has successfully been completed.
-
-        Simply comparing with one solution will
-        most likely lead to false claims, because there might be multiple solutions.
-        Therefore checking the board with the Sudoku rules.
-
-        Parameters
-        ----------
-        board : list
-            The board that will be checked.
-
-        Returns
-        -------
-        solved : bool
-            True if board has successfully been completed.
-
-        errors : tuple
-            The indices of the errors.
-            Only where the starting board has zeroes.
-
-        Also See
-        --------
-        generate : Generate a Sudoku board.
-        solve : Solve a Sudoku board.
-
-        Examples
-        --------
-        >>> sudoku.check(board)
-        True, ()
-        >>> sudoku.check(board)
-        False, ((0, 1), (4, 3), (7, 3))
-        '''
 
 if __name__ == "__main__":
     sudoku = Sudoku()
+
     sudoku.generate(difficulty='hard')
     print(sudoku.board)
+
+    solved, errors = sudoku.check(sudoku.board)
+    print(solved, errors)
+
     sudoku.solve()
     print(sudoku.board)
