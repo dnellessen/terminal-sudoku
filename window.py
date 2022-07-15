@@ -1,7 +1,11 @@
 import curses
 from curses.textpad import rectangle
 
+from copy import deepcopy
+
 from exceptions import *
+from colors import *
+from game import Sudoku
 
 
 class Window:
@@ -12,6 +16,8 @@ class Window:
     ----------
     rows, cols : tuple[int, int]
         Window dimensions.
+    cursor_x, cursor_y : tuple[int, int]
+        Window's cursor position.
 
     Methods
     -------
@@ -20,8 +26,8 @@ class Window:
     """
 
     rows, cols = (0, 0)
-    _min_rows, _min_cols = 25, 50
-    _cursor_x, _cursor_y = 0, 0
+    cursor_x, cursor_y = (0, 0)
+    _min_rows, _min_cols = (25, 50)
 
     def __init__(self):
         self.board = WindowBoard()
@@ -32,59 +38,25 @@ class Window:
         curses.wrapper(self._main)
 
     def _main(self, stdscr):
+        ''' Main loop. '''
         curses.start_color()
         curses.use_default_colors()
 
         Window.rows, Window.cols = stdscr.getmaxyx()
         self._check_size()
-
-        stdscr.clear()
-        self.board.draw(stdscr)
-
-        Window._cursor_x, Window._cursor_y = self.board.cursors[0][0]
-        stdscr.move(Window._cursor_x, Window._cursor_y)
+        self.board.update(stdscr)
 
         key = 0
-        brow, bcol = 0, 0
-
         while key != 'q':
             if stdscr.getmaxyx() != (Window.rows, Window.cols):
                 Window.rows, Window.cols = stdscr.getmaxyx()
                 self._check_size()
-
-                stdscr.clear()
-                self.board.draw(stdscr)
-                Window._cursor_x, Window._cursor_y = self.board.cursors[brow][bcol]
-                stdscr.move(Window._cursor_x, Window._cursor_y)
+                self.board.update(stdscr)
 
             key = stdscr.getkey()
+            self.board.handle_key(stdscr, key)
+            self.board.move_cursor(stdscr)
 
-            if key == 'KEY_LEFT':
-                bcol -= 1
-            elif key == 'KEY_RIGHT':
-                bcol += 1
-            elif key == 'KEY_UP':
-                brow -= 1
-            elif key == 'KEY_DOWN':
-                brow += 1
-
-            if bcol < 0:
-                bcol = 9-1
-            elif bcol > 9-1:
-                bcol = 0
-
-            if brow < 0:
-                brow = 9-1
-            elif brow > 9-1:
-                brow = 0
-
-            if key.isnumeric():
-                if key == '0':
-                    key = ' '
-                stdscr.addstr(str(key))
-
-            Window._cursor_x, Window._cursor_y = self.board.cursors[brow][bcol]
-            stdscr.move(Window._cursor_x, Window._cursor_y)
             stdscr.refresh()
 
     def _check_size(self):
@@ -94,25 +66,64 @@ class Window:
 
 
     
-class WindowBoard:
+class WindowBoard(Sudoku):
     """
-    A class that handles window's Sudoku board.
+    A class that inherits the Sudoku class to handle window's Sudoku board.
 
     Attributes
     ----------
-    cursors : list[list[tuple]]
+    playing_board : list[list]
+        Deepcopy of the board.
+
+    cursors : list[list[tuple[int, int]]]
         Coordinates of board cells on the window.
+    index_row, index_col : tuple[int, int]
+        Keeps hold of index from board coordinates.
+    cursors_user_accessible : list[list[bool]]
+        List of booleans for if board cell is user-accessible.
 
     Methods
     -------
+    update(stdscr):
+        Update window board.
     draw(stdscr):
+        Draw Sudoku board in the center of the window.
+    add_values(stdscr):
+        Draw Sudoku board in the center of the window.
+    write_value(stdscr, row, col, key):
+        Draw Sudoku board in the center of the window.
+    handle_key(stdscr, key):
+        Draw Sudoku board in the center of the window.
+    move_cursor(stdscr):
         Draw Sudoku board in the center of the window.
     """
 
     def __init__(self):
+        super().__init__()
+        super().generate('medium')
+        self.playing_board = deepcopy(self.board)
+
         self.cursors = [[() * 9] * 9 for _ in range(9)]
+        self.index_row, self.index_col = (0, 0)
+        self.cursors_user_accessible = [[False * 9] * 9 for _ in range(9)]
+
         self._width = 44
         self._height = 22
+
+    def update(self, stdscr):
+        ''' 
+        Update window board. 
+
+        Parameters
+        ----------
+        stdscr: _curses.window
+            The curses window to draw on it.
+        '''
+
+        stdscr.erase()
+        self.draw(stdscr)
+        self.add_values(stdscr)
+        self.move_cursor(stdscr)
 
     def draw(self, stdscr):
         '''
@@ -126,9 +137,14 @@ class WindowBoard:
         ----------
         stdscr: _curses.window
             The curses window to draw on it.
+
+        Also See
+        --------
+        add_values : Add board values to window.
+        write_value : Write value on board styled red.
         '''
 
-        # added number is finetuning
+        # added number is fine-tuning
         center_x = Window.cols // 2 + 2
         center_y = Window.rows // 2
 
@@ -169,8 +185,112 @@ class WindowBoard:
             board_start_x - 2 + self._width,
         )
 
-    def _add_cursor(self, brow, bcol, x, y):
-        self.cursors[brow][bcol] = (x, y)
+    def add_values(self, stdscr):
+        ''' 
+        Add board values to window.
+
+        If the value is accessible by the user on the board it's styled
+        in red. If it's a fixed value it's bolded.
+
+        Parameters
+        ----------
+        stdscr: _curses.window
+            The curses window to draw on it.
+
+        Also See
+        --------
+        write_value : Write value on board styled red.
+        '''
+
+        for r in range(9):
+            for c in range(9):
+                cursor_x, cursor_y = self.cursors[r][c]
+                style = curses.A_BOLD
+
+                val = self.playing_board[r][c]
+
+                if self.cursors_user_accessible[r][c] and val != 0:
+                    style = COLOR_RED
+                elif val == 0:
+                    self.cursors_user_accessible[r][c] = True
+                    val = ' '
+
+                stdscr.addstr(cursor_x, cursor_y, str(val), style)
+
+    def write_value(self, stdscr, row, col, key):
+        ''' 
+        Write value on board styled red.
+
+        Parameters
+        ----------
+        stdscr: _curses.window
+            The curses window to draw on it.
+        row: int
+        col: int
+        key: str
+            Pressed key.
+
+        Also See
+        --------
+        add_values : Add board values to window.
+        '''
+
+        self.playing_board[row][col] = int(key)
+        if key == '0':
+            key = ' '
+        stdscr.addstr(str(key), COLOR_RED)
+
+    def handle_key(self, stdscr, key):
+        ''' 
+        Handles key press on board.
+
+        If the key is numeric it will write its value on the board. Otherwise the
+        arrow or WASD keys will change the cursor's position.
+
+        Parameters
+        ----------
+        stdscr: _curses.window
+            The curses window to draw on it.
+        key: str
+            Pressed key.
+
+        Also See
+        --------
+        write_value : Write value on board styled red.
+        '''
+
+        row, col = self.index_row, self.index_col
+
+        if key.isnumeric() and self.cursors_user_accessible[row][col]:
+            self.write_value(stdscr, row, col, key)
+            
+        if key == 'KEY_LEFT' or key == 'a':
+            col = col - 1 if col > 0 else 8
+        elif key == 'KEY_RIGHT' or key == 'd':
+            col = col + 1 if col < 8 else 0
+        elif key == 'KEY_UP' or key == 'w':
+            row = row - 1 if row > 0 else 8
+        elif key == 'KEY_DOWN' or key == 's':
+            row = row + 1 if row < 8 else 0
+
+        self.index_row, self.index_col = row, col
+
+    def move_cursor(self, stdscr):
+        ''' 
+        Move cursor to current board position.
+
+        Parameters
+        ----------
+        stdscr: _curses.window
+            The curses window to draw on it.
+        '''
+
+        row, col = self.index_row, self.index_col
+        Window.cursor_x, Window.cursor_y = self.cursors[row][col]
+        stdscr.move(Window.cursor_x, Window.cursor_y)
+
+    def _add_cursor(self, irow, icol, row, col):
+        self.cursors[irow][icol] = (row, col)
 
 
 if __name__ == "__main__":
