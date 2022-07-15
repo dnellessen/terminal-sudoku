@@ -253,10 +253,13 @@ class Sudoku:
 
         return True
 
-    def _find_empty(self):
+    def _find_empty(self, board=None):
+        if not board:
+            board = self.board
+
         for r in range(9):
             for c in range(9):
-                if self.board[r][c] == 0:
+                if board[r][c] == 0:
                     return (r, c)
         return None
 

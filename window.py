@@ -2,6 +2,7 @@ import curses
 from curses.textpad import rectangle
 
 from copy import deepcopy
+import time
 
 from exceptions import *
 from colors import *
@@ -37,6 +38,10 @@ class Window:
         curses.initscr()
         curses.wrapper(self._main)
 
+    @staticmethod
+    def show_cursor(show: bool):
+        curses.curs_set(int(show))
+
     def _main(self, stdscr):
         ''' Main loop. '''
         curses.start_color()
@@ -55,9 +60,13 @@ class Window:
 
             key = stdscr.getkey()
             self.board.handle_key(stdscr, key)
-            self.board.move_cursor(stdscr)
+            self.handle_key(stdscr, key)
 
             stdscr.refresh()
+
+    def handle_key(self, stdscr, key):
+        if key == 'v':
+            self.board.visual_solve(stdscr)
 
     def _check_size(self):
         ''' Raises WindowToSmallError if window size is too small. '''
@@ -75,6 +84,12 @@ class WindowBoard(Sudoku):
     playing_board : list[list]
         Deepcopy of the board.
 
+    solved : bool
+            True if board has successfully been completed.
+    errors : tuple
+        The indices of the errors.
+        Only where the starting board has zeroes.
+
     cursors : list[list[tuple[int, int]]]
         Coordinates of board cells on the window.
     index_row, index_col : tuple[int, int]
@@ -86,6 +101,8 @@ class WindowBoard(Sudoku):
     -------
     update(stdscr):
         Update window board.
+    visual_solve(stdscr):
+        Visualizes Sudoku solving algorithm therefore solving the board.
     draw(stdscr):
         Draw Sudoku board in the center of the window.
     add_values(stdscr):
@@ -102,6 +119,9 @@ class WindowBoard(Sudoku):
         super().__init__()
         super().generate('medium')
         self.playing_board = deepcopy(self.board)
+
+        self.solved = False
+        self.errors = None
 
         self.cursors = [[() * 9] * 9 for _ in range(9)]
         self.index_row, self.index_col = (0, 0)
@@ -124,6 +144,54 @@ class WindowBoard(Sudoku):
         self.draw(stdscr)
         self.add_values(stdscr)
         self.move_cursor(stdscr)
+
+
+    def visual_solve(self, stdscr):
+        '''
+        Visualizes Sudoku solving algorithm therefore solving the board.
+        
+        View Sudoku.solve() documentation for more information.
+        '''
+
+        self.playing_board = deepcopy(self.board)
+        self.update(stdscr)
+
+        Window.show_cursor(False)
+        self._vsolve(stdscr)
+
+        self.solved, self.errors = self.check(self.playing_board)
+        if self.solved:
+            self.cursors_user_accessible = [[False * 9] * 9 for _ in range(9)]
+            curses.napms(1000)
+            self.update(stdscr)
+        else: Window.show_cursor(True)
+
+    def _vsolve(self, stdscr):
+        empty = self._find_empty(self.playing_board)
+        if not empty:
+            return True
+        row, col = empty
+
+        nums = range(1, 10)
+        for i in nums:
+            if self._possible(row, col, i, self.playing_board):
+                self.playing_board[row][col] = i
+
+                self.update(stdscr)
+                curses.napms(10)
+                stdscr.refresh()
+
+                if self._vsolve(stdscr):
+                    return True
+
+                self.playing_board[row][col] = 0
+
+                self.update(stdscr)
+                curses.napms(10)
+                stdscr.refresh()
+
+        return False
+
 
     def draw(self, stdscr):
         '''
@@ -185,12 +253,12 @@ class WindowBoard(Sudoku):
             board_start_x - 2 + self._width,
         )
 
+
     def add_values(self, stdscr):
         ''' 
         Add board values to window.
 
-        If the value is accessible by the user on the board it's styled
-        in red. If it's a fixed value it's bolded.
+        If the value is accessible by the user on the board it's styled red.
 
         Parameters
         ----------
@@ -210,7 +278,7 @@ class WindowBoard(Sudoku):
                 val = self.playing_board[r][c]
 
                 if self.cursors_user_accessible[r][c] and val != 0:
-                    style = COLOR_RED
+                    style = COLOR_RED | curses.A_BOLD
                 elif val == 0:
                     self.cursors_user_accessible[r][c] = True
                     val = ' '
@@ -235,10 +303,12 @@ class WindowBoard(Sudoku):
         add_values : Add board values to window.
         '''
 
+        self.index_row, self.index_col = row, col
         self.playing_board[row][col] = int(key)
         if key == '0':
             key = ' '
-        stdscr.addstr(str(key), COLOR_RED)
+        stdscr.addstr(str(key), COLOR_RED | curses.A_BOLD)
+
 
     def handle_key(self, stdscr, key):
         ''' 
@@ -274,6 +344,7 @@ class WindowBoard(Sudoku):
             row = row + 1 if row < 8 else 0
 
         self.index_row, self.index_col = row, col
+        self.move_cursor(stdscr)
 
     def move_cursor(self, stdscr):
         ''' 
