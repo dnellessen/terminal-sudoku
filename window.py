@@ -2,7 +2,6 @@ import curses
 from curses.textpad import rectangle
 
 from copy import deepcopy
-import time
 
 from exceptions import *
 from colors import *
@@ -32,6 +31,7 @@ class Window:
 
     def __init__(self):
         self.board = WindowBoard()
+        self.bar = WindowBar()
 
     def start(self):
         ''' Start window and game. '''
@@ -50,13 +50,18 @@ class Window:
         Window.rows, Window.cols = stdscr.getmaxyx()
         self._check_size()
         self.board.update(stdscr)
+        self.bar.draw(stdscr, self.board._difficulty)
 
         key = 0
         while key != 'q':
             if stdscr.getmaxyx() != (Window.rows, Window.cols):
                 Window.rows, Window.cols = stdscr.getmaxyx()
                 self._check_size()
+
+                stdscr.erase()
                 self.board.update(stdscr)
+                self.bar.draw(stdscr, self.board._difficulty)
+
 
             key = stdscr.getkey()
             self.board.handle_key(stdscr, key)
@@ -66,7 +71,9 @@ class Window:
 
     def handle_key(self, stdscr, key):
         if key == 'v':
+            self.bar.write_center(stdscr, f'SOLVING {self.board._difficulty}')
             self.board.visual_solve(stdscr)
+            self.bar.write_center(stdscr, f'{self.board._difficulty} COMPLETED')
 
     def _check_size(self):
         ''' Raises WindowToSmallError if window size is too small. '''
@@ -74,13 +81,15 @@ class Window:
             raise WindowToSmallError('Window must have a minimum of 25 rows and 50 columns.')
 
 
-    
 class WindowBoard(Sudoku):
     """
     A class that inherits the Sudoku class to handle window's Sudoku board.
 
     Attributes
     ----------
+    difficulty : str, default 'medium'
+        The difficulty of the board (easy, medium, hard).
+
     playing_board : list[list]
         Deepcopy of the board.
 
@@ -117,7 +126,10 @@ class WindowBoard(Sudoku):
 
     def __init__(self):
         super().__init__()
-        super().generate('medium')
+
+        self._difficulty = 'medium'
+
+        super().generate(self._difficulty)
         self.playing_board = deepcopy(self.board)
 
         self.solved = False
@@ -130,6 +142,18 @@ class WindowBoard(Sudoku):
         self._width = 44
         self._height = 22
 
+
+    @property
+    def difficulty_property(self):
+        return self._difficulty
+
+    @difficulty_property.setter
+    def difficulty(self, diff):
+        self._difficulty = diff
+        super().generate(self._difficulty)
+        self.playing_board = deepcopy(self.board)
+
+
     def update(self, stdscr):
         ''' 
         Update window board. 
@@ -140,7 +164,6 @@ class WindowBoard(Sudoku):
             The curses window to draw on it.
         '''
 
-        stdscr.erase()
         self.draw(stdscr)
         self.add_values(stdscr)
         self.move_cursor(stdscr)
@@ -364,6 +387,25 @@ class WindowBoard(Sudoku):
         self.cursors[irow][icol] = (row, col)
 
 
+class WindowBar:
+    def draw(self, stdscr, difficulty: str):
+        self.draw_empty(stdscr)
+        self.write_center(stdscr, difficulty)
+        self._reset_cursor(stdscr)
+
+    def draw_empty(self, stdscr):
+        text = ' ' * (Window.cols - 2)
+        stdscr.addstr(Window.rows-1, 1, text, curses.A_STANDOUT)
+
+    def write_center(self, stdscr, text: str):
+        col = (Window.cols // 2) - (len(text) // 2)
+        stdscr.addstr(Window.rows-1, col+1, text.upper(), curses.A_STANDOUT)
+
+    def _reset_cursor(self, stdscr):
+        stdscr.move(Window.cursor_x, Window.cursor_y)
+
+
 if __name__ == "__main__":
     win = Window()
+    win.board.difficulty = 'medium'
     win.start()

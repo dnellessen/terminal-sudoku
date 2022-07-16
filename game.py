@@ -31,8 +31,8 @@ class Sudoku:
 
         self._difficulties = {
             'easy': list(range(28, 35)),
-            'medium': list(range(38, 45)),
-            'hard': list(range(48, 55)),
+            'medium': list(range(34, 41)),
+            'hard': list(range(40, 47)),
         }
     
 
