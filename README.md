@@ -1,4 +1,4 @@
-# terminal_sudoku
+# Terminal Sudoku
 Full Sudoku game playable in the command line.
 
 Generate, solve and play three different difficulties:
