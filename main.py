@@ -1,5 +1,12 @@
 from window import Window
+from exceptions import WindowToSmallError
 
 win = Window()
-win.start()
+
+try:
+    win.start()
+except WindowToSmallError as error:
+    print(error)
+except Exception:
+    print('An error occurred.')
 
