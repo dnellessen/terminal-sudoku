@@ -3,7 +3,7 @@ from curses.textpad import rectangle
 
 from copy import deepcopy
 
-from exceptions import WindowToSmallError
+from exceptions import WindowTooSmallError
 from colors import COLOR_RED, COLOR_YELLOW
 from game import Sudoku
 
@@ -146,9 +146,9 @@ class Window:
                 self.bar.draw(stdscr, self.board._difficulty)
 
     def _check_size(self) -> None:
-        ''' Raises WindowToSmallError if window size is too small. '''
+        ''' Raises WindowTooSmallError if window size is too small. '''
         if Window.rows < Window._min_rows or Window.cols < Window._min_cols:
-            raise WindowToSmallError('Window must have a minimum of 25 rows and 50 columns.')
+            raise WindowTooSmallError('Window must have a minimum of 25 rows and 50 columns.')
 
 
 class WindowBoard(Sudoku):
