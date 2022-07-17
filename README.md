@@ -16,3 +16,6 @@ Commands can be entered from the status bar. Press ':' to activate it.
 - :e[asy]   ->  Switch to an easy board.
 - :m[edium] ->  Switch to a medium board.
 - :h[ard]   ->  Switch to a hard board.
+
+
+Python 3.10 and later required.
