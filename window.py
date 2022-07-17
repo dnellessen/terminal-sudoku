@@ -686,3 +686,4 @@ class WindowBar:
         command = command[:col-3]
         stdscr.addstr(Window.rows-1, col, ' ', curses.A_STANDOUT)
         return col - 1, command
+
