@@ -590,6 +590,7 @@ class WindowBar:
         key = ':'
 
         stdscr.addstr(Window.rows-1, col, key, curses.A_STANDOUT)
+        stdscr.addstr(Window.rows-1, col+1, '_', curses.A_BLINK | curses.A_STANDOUT)
 
         command = ''
         while True:
@@ -601,8 +602,6 @@ class WindowBar:
 
             if unicode_code == 27:  # ESCAPE
                 break
-            elif col > max_len:
-                col, command = self._input_reset(stdscr, max_len)
 
             if key.isalnum():
                 col, command = self._input_add(stdscr, command, col, key)
@@ -610,6 +609,9 @@ class WindowBar:
                 col, command = self._input_delete(stdscr, command, col)
             elif unicode_code == 10:   # RETURN / ENTER
                 return command
+                
+            if col > max_len:
+                col, command = self._input_reset(stdscr, max_len)
 
     def _input_reset(self, stdscr: curses.window, max_len: int) -> tuple[int, str]:
         ''' 
@@ -632,6 +634,7 @@ class WindowBar:
 
         col = 2
         stdscr.addstr(Window.rows-1, col, ':'+' '*(max_len), curses.A_STANDOUT)
+        stdscr.addstr(Window.rows-1, col+1, '_', curses.A_BLINK | curses.A_STANDOUT)
         return col, ''
 
     def _input_add(self, stdscr, command: str, col: int, key: str) -> tuple[int, str]:
@@ -660,6 +663,7 @@ class WindowBar:
         col += 1
         command += key
         stdscr.addstr(Window.rows-1, col, key, curses.A_STANDOUT)
+        stdscr.addstr(Window.rows-1, col+1, '_', curses.A_BLINK | curses.A_STANDOUT)
         return col, command
 
     def _input_delete(self, stdscr: curses.window, command: str, col: int) -> tuple[int, str]:
@@ -684,6 +688,7 @@ class WindowBar:
         '''
 
         command = command[:col-3]
-        stdscr.addstr(Window.rows-1, col, ' ', curses.A_STANDOUT)
+        stdscr.addstr(Window.rows-1, col+1, ' ', curses.A_STANDOUT)
+        stdscr.addstr(Window.rows-1, col, '_', curses.A_BLINK | curses.A_STANDOUT)
         return col - 1, command
 
