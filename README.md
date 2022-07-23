@@ -21,7 +21,7 @@ You can pass in the difficulty of the board when starting the game with an argum
 
 `$ sudoku -e[asy]`\
 `$ sudoku -m[edium]`\
-`$ sudoku -h[ard]`\
+`$ sudoku -h[ard]`
 
 ### In-Game
 
