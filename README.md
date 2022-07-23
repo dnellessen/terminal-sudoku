@@ -12,17 +12,17 @@ Generate, solve and play easy, medium, and hard board difficulties.
 or download ZIP.
 
 
-If you want to run the game from any directory, I'd suggest creating a alias\
+If you want to run the game from any directory, I'd suggest creating an alias\
 `$ alias sudoku='python3 /path/to/directory/main.py'`\
 and [making it permanent](https://fedingo.com/how-to-create-permanent-alias-in-linux/).
 
 ## Usage
-You can pass the difficulty of the board when starting the game with an argument.
+You can pass in the difficulty of the board when starting the game with an argument.
 - `sudoku -e[asy]`
 - `sudoku -m[edium]`
 - `sudoku -h[ard]`
 
-## In-Game
+### In-Game
 
 To move the cursor on the board, use the arrow keys or WASD.
 To remove a number from the board enter '0'.
