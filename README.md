@@ -18,9 +18,9 @@ and [making it permanent](https://fedingo.com/how-to-create-permanent-alias-in-l
 
 ## Usage
 You can pass in the difficulty of the board when starting the game with an argument.
-- `sudoku -e[asy]`
-- `sudoku -m[edium]`
-- `sudoku -h[ard]`
+`$ sudoku -e[asy]`
+`$ sudoku -m[edium]`
+`$ sudoku -h[ard]`
 
 ### In-Game
 
